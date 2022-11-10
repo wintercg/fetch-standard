@@ -1,11 +1,10 @@
 <pre class=metadata>
-Group: WHATWG
+Group: WINTERCG
 H1: Fetch
 Shortname: fetch
 Text Macro: TWITTER fetchstandard
 Text Macro: LATESTRD 2022-06
-Abstract: The Fetch standard defines requests, responses, and the process that binds them: fetching.
-Translation: ja https://triple-underscore.github.io/Fetch-ja.html
+Abstract: A fork of the WHATWG Fetch standard that defines requests, responses, and the process that binds them: fetching.
 Markup Shorthands: css off
 Translate IDs: typedefdef-bodyinit bodyinit,dictdef-requestinit requestinit,typedefdef-requestinfo requestinfo,enumdef-requestdestination requestdestination,enumdef-requestmode requestmode,enumdef-requestcredentials requestcredentials,enumdef-requestcache requestcache,enumdef-requestredirect requestredirect,dictdef-responseinit responseinit,enumdef-responsetype responsetype
 </pre>

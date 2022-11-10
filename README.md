@@ -8,7 +8,7 @@ This repository hosts the WinterCG fork of the [WHATWG Fetch Standard](https://f
 
 ## Building "locally"
 
-For quick local iteration, run `make`. To verify your changes locally, run `make deploy`. See more
+For quick local iteration, run `make`. To verify your changes locally, run `make deploy`.
 
 ## Formatting
 
