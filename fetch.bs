@@ -4,7 +4,7 @@ Shortname: fetch
 Group: wintercg
 Status: w3c/CG-DRAFT
 Level: none
-URL: https://fetch.wintercg.org/
+URL: https://fetch.spec.wintercg.org/
 Repository: https://github.com/wintercg/fetch
 Editor: Ethan Arrowood, Vercel http://vercel.com, ethan-arrowood@vercel.com
 Abstract: A fork of the WHATWG Fetch standard that defines requests, responses, and the process that binds them: fetching.
