@@ -121,6 +121,46 @@ spec:infra; type:dfn; text:implementation-defined
 
 
 
+<h2 id=wintercg-fork class="no-num short">About this fork</h2>
+
+<p>This specification is a fork of the WHATWG Fetch spec [[FETCH]], made as part of the
+<a href="https://wintercg.org">WinterCG</a> effort, to make it more suitable for server-side
+JavaScript runtimes to implement.
+
+<p>The goal of this fork on a short to medium term is to agree on the behavior of fetching in
+server-side runtimes, and on the long term to upstream those changes into the WHATWG specification.
+
+<p>The changes from the WHATWG spec so far are:
+
+<ul>
+ <li><p>(none)
+</ul>
+
+<p class=XXX>Please update this list as new changes are added.
+
+<p>This spec is still a work in progress, and some things we hope to specify in the future are:
+
+<ul>
+ <li><p>Remove CORS restrictions for runtimes with no concept of origins.
+
+ <li><p>Specify how headers are filtered in {{Request}} and {{Response}} instances in various
+ runtimes.
+
+ <li><p>Specify how relative URLs resolve in {{fetch}} and the {{Request}} constructor for runtimes
+ without a concept of <a>API base URL</a>.
+
+ <li><p>Full-duplex request streaming (see
+ <a href="https://github.com/whatwg/fetch/issues/1254">WHATWG issue #1254</a>). Although this is not
+ specific to server-side runtimes, it's unlikely for browsers to implement it anytime soon.
+
+ <li><p>Specify how {{Request}} and {{Response}} behave in (runtime-specific) HTTP server APIs. Do
+ they behave as they do in <a for="/">service workers</a>?
+
+ <li><p>Etc.
+</ul>
+
+
+
 <h2 id=goals class="no-num short">Goals</h2>
 
 <p>The goal is to unify fetching across the web platform and provide consistent handling of
