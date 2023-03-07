@@ -119,6 +119,72 @@ urlPrefix:https://tc39.es/ecma262/#;type:dfn;spec:ecma-262
 spec:infra; type:dfn; text:implementation-defined
 </pre>
 
+<style>
+  /* WHATWG specs use the warning, XXX and domintro classes, which don't have a
+   * styling in the default W3C stylesheet. Here we give them a style similar to
+   * note, issue, etc. */
+  .warning, .XXX, .domintro {
+    padding: .5em;
+    border: .5em;
+    border-left-style: solid;
+    page-break-inside: avoid;
+    margin: 1em auto;
+  }
+  span.warning, span.XXX {
+    padding: .1em .5em .15em;
+    border-right-style: solid;
+  }
+  .warning > p:first-child, .XXX > p:first-child {
+    margin-top: 0;
+  }
+  .warning > p:last-child, .XXX > p:last-child {
+    margin-bottom: 0;
+  }
+
+  .warning, .XXX {
+    border-color: #990000;
+    background: #FFF0F0;
+    color: var(--text);
+    overflow: auto;
+  }
+  .warning::before {
+    content: "WARNING";
+    padding-right: 1em;
+    color: hsl(0, 70%, 30%);
+  }
+  .XXX {
+    color: hsl(0, 70%, 30%);
+  }
+
+  .domintro {
+    border-color: green;
+    background: #F0FFF0;
+    color: var(--text);
+    overflow: auto;
+  }
+  .domintro::before {
+    content: "For web developers (non-normative)";
+    display: block;
+    margin-bottom: .5em;
+    color: hsl(120, 70%, 30%);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .warning, .XXX, .domintro {
+      background: var(--borderedblock-bg);
+    }
+    .warning::before {
+      color: hsl(0, 70%, 70%);
+    }
+    .XXX {
+      color: hsl(0, 70%, 70%);
+    }
+    .domintro::before {
+      color: hsl(120, 70%, 70%);
+    }
+  }
+</style>
+
 
 
 <h2 id=wintercg-fork class="no-num short">About this fork</h2>
