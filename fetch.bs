@@ -116,6 +116,7 @@ urlPrefix:https://tc39.es/ecma262/#;type:dfn;spec:ecma-262
 </pre>
 
 <pre class=link-defaults>
+spec:dom; type:dfn; text:element
 spec:infra; type:dfn; text:implementation-defined
 </pre>
 
@@ -333,7 +334,7 @@ lt="authentication entry">authentication entries</a> (for HTTP authentication). 
 <a for=struct>items</a>:
 
 <dl>
- <dt><dfn for="fetch controller">state</dfn> (default "<code>ongoing</code>")
+ <dt><dfn for="fetch controller" export>state</dfn> (default "<code>ongoing</code>")
  <dd>"<code>ongoing</code>", "<code>terminated</code>", or "<code>aborted</code>"
 
  <dt><dfn for="fetch controller">full timing info</dfn> (default null)
@@ -408,7 +409,7 @@ given a <a>fetch controller</a> <var>controller</var>:
 </div>
 
 <div algorithm>
-<p>To <dfn>deserialize a serialized abort reason</dfn>, given null or a <a>Record</a>
+<p>To <dfn export>deserialize a serialized abort reason</dfn>, given null or a <a>Record</a>
 <var>abortReason</var> and a <a>realm</a> <var>realm</var>:
 
 <ol>
@@ -680,7 +681,10 @@ uses the more colloquial term "header". [[HTTP]]
 <a for=/>headers</a>. It is initially « ».
 
 <p class=note>A <a for=/>header list</a> is essentially a specialized multimap: an ordered list of
-key-value pairs with potentially duplicate keys.
+key-value pairs with potentially duplicate keys. Since headers other than `<code>Set-Cookie</code>`
+are always combined when exposed to client-side JavaScript, implementations could choose a more
+efficient representation, as long as they also support an associated data structure for
+`<code>Set-Cookie</code>` headers.
 
 <div algorithm>
 <p>To
@@ -972,7 +976,7 @@ directly. Use <a for="header list">get, decode, and split</a> instead.
 <a lt=name for=header>names</a> <var>headerNames</var>, run these steps:
 
 <ol>
- <li><p>Let <var>headerNamesSet</var> be a new <a for/>ordered set</a>.
+ <li><p>Let <var>headerNamesSet</var> be a new <a for=/>ordered set</a>.
 
  <li><p><a for=list>For each</a> <var>name</var> of <var>headerNames</var>, <a for=set>append</a>
  the result of <a lt=byte-lowercased>byte-lowercasing</a> <var>name</var> to
@@ -999,12 +1003,33 @@ directly. Use <a for="header list">get, decode, and split</a> instead.
   <p><a for=list>For each</a> <var>name</var> of <var>names</var>:
 
   <ol>
-   <li><p>Let <var>value</var> be the result of <a for="header list">getting</a> <var>name</var>
-   from <var>list</var>.
+   <li>
+    <p>If <var>name</var> is `<code>set-cookie</code>`, then:
 
-   <li><p>Assert: <var>value</var> is non-null.
+    <ol>
+     <li><p>Let <var>values</var> be a list of all <a lt=value for=header>values</a> of
+     <a for=/>headers</a> in <var>list</var> whose <a for=header>name</a> is a
+     <a>byte-case-insensitive</a> match for <var>name</var>, in order.
 
-   <li><p><a for=list>Append</a> (<var>name</var>, <var>value</var>) to <var>headers</var>.
+     <li>
+      <p><a for=list>For each</a> <var>value</var> of <var>values</var>:
+
+      <ol>
+       <li><p><a for=list>Append</a> (<var>name</var>, <var>value</var>) to <var>headers</var>.
+      </ol>
+    </ol>
+
+   <li>
+    <p>Otherwise:
+
+    <ol>
+     <li><p>Let <var>value</var> be the result of <a for="header list">getting</a> <var>name</var>
+     from <var>list</var>.
+
+     <li><p>Assert: <var>value</var> is non-null.
+
+     <li><p><a for=list>Append</a> (<var>name</var>, <var>value</var>) to <var>headers</var>.
+    </ol>
   </ol>
 
  <li><p>Return <var>headers</var>.
@@ -1104,7 +1129,7 @@ fetch("https://victim.example/naïve-endpoint", {
    <dd>
     <ol>
      <li><p>Let <var>rangeValue</var> be the result of <a>parsing a single range header value</a>
-     given <var>value</var>.
+     given <var>value</var> and false.
 
      <li><p>If <var>rangeValue</var> is failure, then return false.
 
@@ -1220,7 +1245,7 @@ is a <a>byte-case-insensitive</a> match for one of
 </ul>
 
 <div algorithm>
-<p>To determine whether a <a for/>header</a> (<var>name</var>, <var>value</var>) is a
+<p>To determine whether a <a for=/>header</a> (<var>name</var>, <var>value</var>) is a
 <dfn noexport>no-CORS-safelisted request-header</dfn>, run these steps:
 
 <ol>
@@ -1376,16 +1401,27 @@ run these steps:
 
 <div algorithm>
 <p>To <dfn id=simple-range-header-value>parse a single range header value</dfn> from a
-<a>byte sequence</a> <var>value</var>, run these steps:
+<a>byte sequence</a> <var>value</var> and a boolean <var>allowWhitespace</var>, run these steps:
 
 <ol>
  <li><p>Let <var>data</var> be the <a>isomorphic decoding</a> of <var>value</var>.
 
- <li><p>If <var>data</var> does not <a for=string>start with</a> "<code>bytes=</code>", then return
+ <li><p>If <var>data</var> does not <a for=string>start with</a> "<code>bytes</code>", then return
  failure.
 
  <li><p>Let <var>position</var> be a <a>position variable</a> for <var>data</var>, initially
- pointing at the 6th <a>code point</a> of <var>data</var>.
+ pointing at the 5th <a>code point</a> of <var>data</var>.
+
+ <li><p>If <var>allowWhitespace</var> is true, <a>collect a sequence of code points</a> that are
+ <a>HTTP tab or space</a>, from <var>data</var> given <var>position</var>.
+
+ <li><p>If the <a>code point</a> at <var>position</var> within <var>data</var> is not U+003D (=),
+ then return failure.
+
+ <li><p>Advance <var>position</var> by 1.
+
+ <li><p>If <var>allowWhitespace</var> is true, <a>collect a sequence of code points</a> that are
+ <a>HTTP tab or space</a>, from <var>data</var> given <var>position</var>.
 
  <li><p>Let <var>rangeStart</var> be the result of <a>collecting a sequence of code points</a> that
  are <a>ASCII digits</a>, from <var>data</var> given <var>position</var>.
@@ -1393,10 +1429,16 @@ run these steps:
  <li><p>Let <var>rangeStartValue</var> be <var>rangeStart</var>, interpreted as decimal number, if
  <var>rangeStart</var> is not the empty string; otherwise null.
 
+ <li><p>If <var>allowWhitespace</var> is true, <a>collect a sequence of code points</a> that are
+ <a>HTTP tab or space</a>, from <var>data</var> given <var>position</var>.
+
  <li><p>If the <a>code point</a> at <var>position</var> within <var>data</var> is not U+002D (-),
  then return failure.
 
  <li><p>Advance <var>position</var> by 1.
+
+ <li><p>If <var>allowWhitespace</var> is true, <a>collect a sequence of code points</a> that are
+ <a>HTTP tab or space</a>, from <var>data</var> given <var>position</var>.
 
  <li><p>Let <var>rangeEnd</var> be the result of <a>collecting a sequence of code points</a> that
  are <a>ASCII digits</a>, from <var>data</var> given <var>position</var>.
@@ -1623,6 +1665,9 @@ these steps:
 
 <h4 id=requests>Requests</h4>
 
+<p class=note>This section documents how requests work in detail. To get started, see
+[[#fetch-elsewhere-request]].
+
 <p>The input to <a for=/>fetch</a> is a
 <dfn export id=concept-request>request</dfn>.
 
@@ -1717,7 +1762,7 @@ processing requirements.
 "<code>beacon</code>",
 "<code>body</code>",
 "<code>css</code>",
-"<code>early-hint</code>",
+"<code>early-hints</code>",
 "<code>embed</code>",
 "<code>fetch</code>",
 "<code>font</code>",
@@ -1808,7 +1853,7 @@ and "<code>webidentity</code>" as fetches with those destinations skip service w
 "<code>xslt</code>" as that too can cause script execution. It is not included in the list as it is
 not always relevant and might require different behavior.
 
-<div class=note>
+<div class=note id=destination-table>
  <p>The following table illustrates the relationship between a <a for=/>request</a>'s
  <a for=request>initiator</a>, <a for=request>destination</a>, CSP directives, and features. It is
  not exhaustive with respect to features. Features need to have the relevant values defined in their
@@ -1922,7 +1967,7 @@ not always relevant and might require different behavior.
   <tr>
    <td>"<code>prefetch</code>"
    <td rowspan=2>""
-   <td rowspan=2><code>prefetch-src</code>
+   <td rowspan=2><code>default-src</code> (no specific directive)
    <td>HTML's <code>&lt;link rel=prefetch></code>
   <tr>
    <td>"<code>prerender</code>"
@@ -2504,7 +2549,8 @@ this is also tracked internally using the request's <a for=request>timing allow 
 <p>A <dfn export id=concept-network-error>network error</dfn> is a <a for=/>response</a> whose
 <a for=response>type</a> is "<code>error</code>", <a for=response>status</a> is 0,
 <a for=response>status message</a> is the empty byte sequence,
-<a for=response>header list</a> is « », and <a for=response>body</a> is null.
+<a for=response>header list</a> is « », <a for=response>body</a> is null, and
+<a for=response>body info</a> is a new <a for=/>response body info</a>.
 
 <p>An <dfn export id=concept-aborted-network-error>aborted network error</dfn> is a
 <a>network error</a> whose <a for=response>aborted flag</a> is set.
@@ -2575,8 +2621,9 @@ of defining the concrete types of <a for=/>filtered responses</a>.)
 <a for=response>URL list</a> is « »,
 <a for=response>status</a> is 0,
 <a for=response>status message</a> is the empty byte sequence,
-<a for=response>header list</a> is « », and
-<a for=response>body</a> is null.
+<a for=response>header list</a> is « »,
+<a for=response>body</a> is null, and
+<a for=response>body info</a> is a new <a for=/>response body info</a>.
 
 <p>An
 <dfn export id=concept-filtered-response-opaque-redirect>opaque-redirect filtered response</dfn>
@@ -2584,8 +2631,9 @@ is a <a>filtered response</a> whose
 <a for=response>type</a> is "<code>opaqueredirect</code>",
 <a for=response>status</a> is 0,
 <a for=response>status message</a> is the empty byte sequence,
-<a for=response>header list</a> is « », and
-<a for=response>body</a> is null.
+<a for=response>header list</a> is « »,
+<a for=response>body</a> is null, and
+<a for=response>body info</a> is a new <a for=/>response body info</a>.
 
 <div class=note>
  <p>Exposing the <a for=response>URL list</a> for
@@ -4804,8 +4852,7 @@ steps:
      <li>
       <p>If <var>response</var>'s <a for=response>timing allow passed flag</a> is not set,
       then set <var>timingInfo</var> to the result of <a>creating an opaque timing info</a> for
-      <var>timingInfo</var>, set <var>bodyInfo</var> to a new <a for=/>response body info</a>, and
-      set <var>cacheState</var> to the empty string.
+      <var>timingInfo</var> and set <var>cacheState</var> to the empty string.
 
       <p class=note>This covers the case of <var>response</var> being a <a>network error</a>.
 
@@ -4947,21 +4994,118 @@ steps:
       <p class=note>The `<code>GET</code>` <a for=/>method</a> restriction serves no useful purpose
       other than being interoperable.
 
-     <li><p>Let <var>bodyWithType</var> be the result of <a for=BodyInit>safely extracting</a>
-     <var>blobURLEntry</var>'s <a for="blob URL entry">object</a>.
+     <li><p>Let <var>blob</var> be <var>blobURLEntry</var>'s <a for="blob URL entry">object</a>.
 
-     <li><p>Let <var>body</var> be <var>bodyWithType</var>'s <a for="body with type">body</a>.
+     <li><p>Let <var>response</var> be a new <a for=/>response</a>.
 
-     <li><p>Let <var>length</var> be <var>body</var>'s <a for=body>length</a>,
+     <li><p>Let <var>fullLength</var> be <var>blob</var>'s {{Blob/size}}.
+
+     <li><p>Let <var>serializedFullLength</var> be <var>fullLength</var>,
      <a lt="serialize an integer">serialized</a> and <a>isomorphic encoded</a>.
 
-     <li><p>Let <var>type</var> be <var>bodyWithType</var>'s <a for="body with type">type</a> if it
-     is non-null; otherwise the empty byte sequence.
+     <li><p>Let <var>type</var> be <var>blob</var>'s {{Blob/type}}.
 
-     <li><p>Return a new <a for=/>response</a> whose <a for=response>status message</a> is
-     `<code>OK</code>`, <a for=response>header list</a> is « (`<code>Content-Length</code>`,
-     <var>length</var>), (`<code>Content-Type</code>`, <var>type</var>) », and
-     <a for=response>body</a> is <var>body</var>.
+     <li>
+      <p>If <var>request</var>'s <a for=request>header list</a>
+      <a for="header list">does not contain</a> `<code>Range</code>`:
+
+      <ol>
+       <li><p>Let <var>bodyWithType</var> be the result of <a for=BodyInit>safely extracting</a>
+       <var>blob</var>.
+
+       <li><p>Set <var>response</var>'s <a for=response>status message</a> to `<code>OK</code>`.
+
+       <li><p>Set <var>response</var>'s <a for=response>body</a> to <var>bodyWithType</var>'s
+       <a for="body with type">body</a>.
+
+       <li><p>Set <var>response</var>'s <a for=response>header list</a> to «
+       (`<code>Content-Length</code>`, <var>serializedFullLength</var>),
+       (`<code>Content-Type</code>`, <var>type</var>) ».
+      </ol>
+
+     <li>
+      <p>Otherwise:
+
+      <ol>
+       <li><p>Set <var>response</var>'s <a for=response>range-requested flag</a>.
+
+       <li><p>Let <var>rangeHeader</var> be the result of <a for="header list">getting</a>
+       `<code>Range</code>` from <var>request</var>'s <a for=request>header list</a>.
+       <!-- Range should be added to the headers defined in HTTP extensions. See
+            https://github.com/whatwg/fetch/issues/1553 for future work -->
+
+       <li><p>Let <var>rangeValue</var> be the result of <a>parsing a single range header value</a>
+       given <var>rangeHeader</var> and true.
+
+       <li><p>If <var>rangeValue</var> is failure, then return a <a>network error</a>.
+
+       <li><p>Let (<var>rangeStart</var>, <var>rangeEnd</var>) be <var>rangeValue</var>.
+
+       <li>
+        <p>If <var>rangeStart</var> is null:
+
+        <ol>
+         <li><p>Set <var>rangeStart</var> to <var>fullLength</var> &minus; <var>rangeEnd</var>.
+
+         <li><p>Set <var>rangeEnd</var> to <var>rangeStart</var> + <var>rangeEnd</var> &minus; 1.
+        </ol>
+
+       <li>
+        <p>Otherwise:
+
+        <ol>
+         <li><p>If <var>rangeStart</var> is greater than or equal to <var>fullLength</var>, then
+         return a <a>network error</a>.
+
+         <li><p>If <var>rangeEnd</var> is null or <var>rangeEnd</var> is greater than or equal to
+         <var>fullLength</var>, then set <var>rangeEnd</var> to <var>fullLength</var> &minus; 1.
+        </ol>
+
+       <li>
+        <p>Let <var>slicedBlob</var> be the result of invoking <a>slice blob</a> given
+        <var>blob</var>, <var>rangeStart</var>, <var>rangeEnd</var> + 1, and <var>type</var>.
+
+        <p class=note>A range header denotes an inclusive byte range, while the <a>slice blob</a>
+        algorithm input range does not. To use the <a>slice blob</a> algorithm, we have to increment
+        <var>rangeEnd</var>.
+
+       <li><p>Let <var>slicedBodyWithType</var> be the result of
+       <a for=BodyInit>safely extracting</a> <var>slicedBlob</var>.
+
+       <li><p>Set <var>response</var>'s <a for=response>body</a> to <var>slicedBodyWithType</var>'s
+       <a for="body with type">body</a>.
+
+       <li><p>Let <var>serializedSlicedLength</var> be <var>slicedBlob</var>'s {{Blob/size}},
+       <a lt="serialize an integer">serialized</a> and <a>isomorphic encoded</a>.
+
+       <!-- The following steps for content-range should be definined in a separate algorithm.
+            See https://github.com/whatwg/fetch/issues/1552 for future work -->
+       <li><p>Let <var>contentRange</var> be `<code>bytes </code>`.
+
+       <li><p>Append <var>rangeStart</var>, <a lt="serialize an integer">serialized</a> and
+       <a>isomorphic encoded</a>, to <var>contentRange</var>.
+
+       <li><p>Append 0x2D (-) to <var>contentRange</var>.
+
+       <li><p>Append <var>rangeEnd</var>, <a lt="serialize an integer">serialized</a> and
+       <a>isomorphic encoded</a> to <var>contentRange</var>.
+
+       <li><p>Append 0x2F (/) to <var>contentRange</var>.
+
+       <li><p>Append <var>serializedFullLength</var> to <var>contentRange</var>.
+
+       <li><p>Set <var>response</var>'s <a for=response>status</a> to 206.
+
+       <li><p>Set <var>response</var>'s <a for=response>status message</a> to
+       `<code>Partial Content</code>`.
+
+       <li><p>Set <var>response</var>'s <a for=response>header list</a> to «
+       (`<code>Content-Length</code>`, <var>serializedSlicedLength</var>),
+       (`<code>Content-Type</code>`, <var>type</var>), (`<code>Content-Range</code>`,
+       <var>contentRange</var>) ».
+      </ol>
+
+     <li><p>Return <var>response</var>.
     </ol>
 
    <dt>"<code>data</code>"
@@ -5185,19 +5329,25 @@ these steps:
 
     <dl class=switch>
      <dt>"<code>error</code>"
-     <dd><p>Set <var>response</var> to a <a>network error</a>.
+     <dd>
+      <ol><li><p>Set <var>response</var> to a <a>network error</a>.</ol>
 
      <dt>"<code>manual</code>"
-     <dd><p>Set <var>response</var> to an <a>opaque-redirect filtered response</a> whose
-     <a for="filtered response">internal response</a> is <var>actualResponse</var>. If
-     <var>request</var>'s <a for=request>mode</a> is "<code>navigate</code>", then set
-     <var>fetchParams</var>'s <a for="fetch params">controller</a>'s <a
-     for="fetch controller">next manual redirect steps</a> to run <a>HTTP-redirect fetch</a> given
-     <var>fetchParams</var> and <var>response</var>.
+     <dd>
+      <ol>
+       <li><p>If <var>request</var>'s <a for=request>mode</a> is "<code>navigate</code>", then set
+       <var>fetchParams</var>'s <a for="fetch params">controller</a>'s
+       <a for="fetch controller">next manual redirect steps</a> to run <a>HTTP-redirect fetch</a>
+       given <var>fetchParams</var> and <var>response</var>.
+
+       <li><p>Otherwise, set <var>response</var> to an <a>opaque-redirect filtered response</a>
+       whose <a for="filtered response">internal response</a> is <var>actualResponse</var>.
+      </ol>
 
      <dt>"<code>follow</code>"
-     <dd><p>Set <var>response</var> to the result of running <a>HTTP-redirect fetch</a> given
-     <var>fetchParams</var> and <var>response</var>.
+     <dd>
+      <ol><li><p>Set <var>response</var> to the result of running <a>HTTP-redirect fetch</a> given
+      <var>fetchParams</var> and <var>response</var>.</ol>
     </dl>
     <!-- not resetting actualResponse since it's no longer used anyway -->
   </ol>
@@ -6067,25 +6217,73 @@ optional boolean <var>forceNewConnection</var> (default false), run these steps:
    <li><p>Return the <a for=/>appropriate network error</a> for <var>fetchParams</var>.
   </ol>
 
- <li><p>Let <var>pullAlgorithm</var> be an algorithm that <a lt=resumed for=fetch>resumes</a> the
- ongoing fetch if it is <a lt=suspend for=fetch>suspended</a>.
+ <li>
+  <p>Let |buffer| be an empty buffer that can have bytes appended to it.
+
+  <p class="note">This represents an internal buffer inside the network layer of the user agent.
+
+ <li>
+  <p>Let |pullAlgorithm| be the followings steps:
+
+  <ol>
+   <li><p>Let |promise| be [=a new promise=].
+
+   <li>
+    <p>Run the following steps [=in parallel=]:
+
+    <ol>
+     <li><p>If the size of |buffer| is smaller than a lower limit chosen by the user agent and the
+     ongoing fetch is [=fetch/suspend|suspended=], [=fetch/resumed|resume=] the fetch.
+
+     <li><p>Wait until |buffer| is not empty.
+
+     <li>
+      <p>[=Queue a fetch task=] to run the following steps, with |fetchParams|'s
+      [=task destination=].
+
+      <ol>
+       <li><p>Let |available| be the size of |buffer|.
+
+       <li><p>Let |desiredSize| be |available|.
+
+       <li><p>If |stream|'s [=ReadableStream/current BYOB request view=] is non-null, then set
+       |desiredSize| to |stream|'s [=ReadableStream/current BYOB request view=]'s
+       [=BufferSource/byte length=].
+
+       <li><p>Let |extractSize| be the smaller value of |available| and |desiredSize|.
+
+       <li><p>Let <var>bytes</var> be the result of extracting |extractSize| of bytes from
+       <var>buffer</var>.
+
+       <li><p>If |stream|s [=ReadableStream/current BYOB request view=] is non-null, then
+       [=ArrayBufferView/write=] |bytes| into |stream|'s
+       [=ReadableStream/current BYOB request view=], and set |view| to |stream|'s
+       [=ReadableStream/current BYOB request view=].
+
+       <li>Otherwise, set |view| to the result of [=ArrayBufferView/create|creating=] a
+       {{Uint8Array}} from |bytes| in |stream|'s [=relevant Realm=].
+
+       <li><p>[=ReadableStream/Enqueue=] |view| into |stream|.
+
+       <li><p>If |stream| is [=ReadableStream/errored=], then [=fetch controller/terminate=]
+       |fetchParams|'s [=fetch params/controller=].
+
+       <li><p>[=/Resolve=] |promise| with undefined.
+      </ol>
+    </ol>
+
+   <li><p>Return |promise|.
+  </ol>
 
  <li><p>Let <var>cancelAlgorithm</var> be an algorithm that <a for="fetch controller">aborts</a>
  <var>fetchParams</var>'s <a for="fetch params">controller</a> with <var>reason</var>, given
  <var>reason</var>.
 
- <li><p>Let <var>highWaterMark</var> be a non-negative, non-NaN number, chosen by the user agent.
-
- <li><p>Let <var>sizeAlgorithm</var> be an algorithm that accepts a <a>chunk</a> object and returns
- a non-negative, non-NaN, non-infinite number, chosen by the user agent.
-
  <li><p>Let <var>stream</var> be a <a>new</a> {{ReadableStream}}.
 
- <li><p><a for=ReadableStream>Set up</a> <var>stream</var> with
- <a for="ReadableStream/set up"><var>pullAlgorithm</var></a> set to <var>pullAlgorithm</var>,
- <a for="ReadableStream/set up"><var>cancelAlgorithm</var></a> set to <var>cancelAlgorithm</var>,
- <a for="ReadableStream/set up"><var>highWaterMark</var></a> set to <var>highWaterMark</var>, and
- <a for="ReadableStream/set up"><var>sizeAlgorithm</var></a> set to <var>sizeAlgorithm</var>.
+ <li><p>[=ReadableStream/set up with byte reading support|Set up=] |stream| with byte reading
+ support with <var>[=ReadableStream/set up/pullAlgorithm=]</var> set to |pullAlgorithm|,
+ <var>[=ReadableStream/set up/cancelAlgorithm=]</var> set to |cancelAlgorithm|.
 
  <li><p>Set <var>response</var>'s <a for=response>body</a> to a new <a for=/>body</a> whose
  <a for=body>stream</a> is <var>stream</var>.
@@ -6139,15 +6337,10 @@ optional boolean <var>forceNewConnection</var> (default false), run these steps:
          <li><p>If <var>bytes</var> is failure, then <a for="fetch controller">terminate</a>
          <var>fetchParams</var>'s <a for="fetch params">controller</a>.
 
-         <li><p><a for=ReadableStream>Enqueue</a> a {{Uint8Array}} wrapping an {{ArrayBuffer}}
-         containing <var>bytes</var> into <var>stream</var>.
+         <li><p>Append |bytes| to |buffer|.
 
-         <li><p>If <var>stream</var> is <a for=ReadableStream>errored</a>, then
-         <a for="fetch controller">terminate</a> <var>fetchParams</var>.'s
-         <a for="fetch params">controller</a>.
-
-         <li><p>If <var>stream</var> doesn't <a for=ReadableStream>need more data</a> ask the user
-         agent to <a for=fetch>suspend</a> the ongoing fetch.
+         <li><p>If the size of |buffer| is larger than an upper limit chosen by the user agent, ask
+         the user agent to [=fetch/suspend=] the ongoing fetch.
         </ol>
 
        <li><p>Otherwise, if the bytes transmission for <var>response</var>'s message body is done
@@ -6604,19 +6797,12 @@ interface Headers {
   undefined append(ByteString name, ByteString value);
   undefined delete(ByteString name);
   ByteString? get(ByteString name);
+  sequence&lt;ByteString> getSetCookie();
   boolean has(ByteString name);
   undefined set(ByteString name, ByteString value);
   iterable&lt;ByteString, ByteString>;
 };
 </pre>
-
-<p class=note>Unlike a <a for=/>header list</a>, a {{Headers}} object cannot represent more than one
-`<code>Set-Cookie</code>` <a for=/>header</a>. In a way this is problematic as unlike all other
-headers `<code>Set-Cookie</code>` headers cannot be combined, but since `<code>Set-Cookie</code>`
-headers are not exposed to client-side JavaScript this is deemed an acceptable compromise.
-Implementations could choose the more efficient {{Headers}} object representation even for a
-<a for=/>header list</a>, as long as they also support an associated data structure for
-`<code>Set-Cookie</code>` headers.
 
 <p>A {{Headers}} object has an associated
 <dfn export for=Headers id=concept-headers-header-list>header list</dfn> (a
@@ -6662,6 +6848,9 @@ new Headers(meta2);
  <dd><p>Returns as a string the values of all headers whose name is <var>name</var>, separated by a
  comma and a space.
 
+ <dt><code><var>headers</var> . <a method for=Headers lt=getSetCookie()>getSetCookie</a>()</code>
+ <dd><p>Returns a list of the values for all headers whose name is `<code>Set-Cookie</code>`.
+
  <dt><code><var>headers</var> . <a method for=Headers lt=has()>has</a>(<var>name</var>)</code>
  <dd><p>Returns whether there is a header whose name is <var>name</var>.
 
@@ -6675,6 +6864,7 @@ new Headers(meta2);
 
 <hr>
 
+<div algorithm>
 <p>To <dfn for=Headers>validate</dfn> a  <a for=/>header</a> (<var>name</var>, <var>value</var>) for
 a {{Headers}} object <var>headers</var>:
 
@@ -6693,10 +6883,12 @@ a {{Headers}} object <var>headers</var>:
 
  <li><p>Return true.
 </ol>
+</div>
 
 <p class=note>Steps for "<code>request-no-cors</code>" are not shared as you cannot have a fake
 value (for {{Headers/delete()}}) that always succeeds in <a>CORS-safelisted request-header</a>.
 
+<div algorithm>
 <p>To <dfn export for=Headers id=concept-headers-append>append</dfn> a <a for=/>header</a>
 (<var>name</var>, <var>value</var>) to a {{Headers}} object <var>headers</var>, run these steps:
 
@@ -6729,7 +6921,9 @@ value (for {{Headers/delete()}}) that always succeeds in <a>CORS-safelisted requ
  <li><p>If <var>headers</var>'s <a for=Headers>guard</a> is "<code>request-no-cors</code>", then
  <a for=Headers>remove privileged no-CORS request-headers</a> from <var>headers</var>.
 </ol>
+</div>
 
+<div algorithm>
 <p>To <dfn export for=Headers id=concept-headers-fill>fill</dfn> a {{Headers}} object
 <var>headers</var> with a given object <var>object</var>, run these steps:
 
@@ -6749,7 +6943,9 @@ value (for {{Headers/delete()}}) that always succeeds in <a>CORS-safelisted requ
  <var>key</var> → <var>value</var> of <var>object</var>, <a for=Headers>append</a> (<var>key</var>,
  <var>value</var>) to <var>headers</var>.
 </ol>
+</div>
 
+<div algorithm>
 <p>To
 <dfn for=Headers id=concept-headers-remove-privileged-no-cors-request-headers>remove privileged no-CORS request-headers</dfn>
 from a {{Headers}} object (<var>headers</var>), run these steps:
@@ -6765,7 +6961,9 @@ from a {{Headers}} object (<var>headers</var>), run these steps:
 </ol>
 
 <p class=note>This is called when headers are modified by unprivileged code.
+</div>
 
+<div algorithm>
 <p>The
 <dfn id=dom-headers export for=Headers constructor lt="Headers(init)"><code>new Headers(<var>init</var>)</code></dfn>
 constructor steps are:
@@ -6775,16 +6973,20 @@ constructor steps are:
 
  <li><p>If <var>init</var> is given, then <a for=Headers>fill</a> <a>this</a> with <var>init</var>.
 </ol>
+</div>
 
+<div algorithm>
 <p>The <dfn export for=Headers method><code>append(<var>name</var>, <var>value</var>)</code></dfn>
 method steps are to <a for=Headers>append</a> (<var>name</var>, <var>value</var>) to <a>this</a>.
+</div>
 
+<div algorithm>
 <p>The <dfn export for=Headers method><code>delete(<var>name</var>)</code></dfn> method steps are:
 
 <ol>
  <li>
-  <p>If <a for=Headers>validating</a> (<var>name</var>, ``) for <var>headers</var> returns false,
-  then return.
+  <p>If <a for=Headers>validating</a> (<var>name</var>, ``) for <a>this</a> returns false, then
+  return.
 
   <p class=note>Passing a dummy <a>header value</a> ought not to have any negative repercussions.
 
@@ -6802,7 +7004,9 @@ method steps are to <a for=Headers>append</a> (<var>name</var>, <var>value</var>
  <li><p>If <a>this</a>'s <a for=Headers>guard</a> is "<code>request-no-cors</code>", then
  <a for=Headers>remove privileged no-CORS request-headers</a> from <a>this</a>.
 </ol>
+</div>
 
+<div algorithm>
 <p>The <dfn export for=Headers method><code>get(<var>name</var>)</code></dfn> method steps are:
 
 <ol>
@@ -6811,7 +7015,22 @@ method steps are to <a for=Headers>append</a> (<var>name</var>, <var>value</var>
  <li><p>Return the result of <a for="header list">getting</a> <var>name</var> from <a>this</a>'s
  <a for=Headers>header list</a>.
 </ol>
+</div>
 
+<div algorithm>
+<p>The <dfn export for=Headers method><code>getSetCookie()</code></dfn> method steps are:
+
+<ol>
+ <li><p>If <a>this</a>'s <a for=Headers>header list</a> <a for="header list">does not contain</a>
+ `<code>Set-Cookie</code>`, then return « ».
+
+ <li><p>Return the <a lt=value for=header>values</a> of all <a for=/>headers</a> in <a>this</a>'s
+ <a for=Headers>header list</a> whose <a for=header>name</a> is a <a>byte-case-insensitive</a> match
+ for `<code>Set-Cookie</code>`, in order.
+</ol>
+</div>
+
+<div algorithm>
 <p>The <dfn export for=Headers method><code>has(<var>name</var>)</code></dfn> method steps are:
 
 <ol>
@@ -6820,15 +7039,17 @@ method steps are to <a for=Headers>append</a> (<var>name</var>, <var>value</var>
  <li><p>Return true if <a>this</a>'s <a for=Headers>header list</a>
  <a for="header list">contains</a> <var>name</var>; otherwise false.
 </ol>
+</div>
 
+<div algorithm>
 <p>The <dfn export for=Headers method><code>set(<var>name</var>, <var>value</var>)</code></dfn>
 method steps are:
 
 <ol>
  <li><p><a for="header value">Normalize</a> <var>value</var>.
 
- <li><p>If <a for=Headers>validating</a> (<var>name</var>, <var>value</var>) for <var>headers</var>
- returns false, then return.
+ <li><p>If <a for=Headers>validating</a> (<var>name</var>, <var>value</var>) for <a>this</a> returns
+ false, then return.
 
  <li><p>If <a>this</a>'s <a for=Headers>guard</a> is "<code>request-no-cors</code>" and
  (<var>name</var>, <var>value</var>) is not a <a>no-CORS-safelisted request-header</a>, then return.
@@ -6839,6 +7060,7 @@ method steps are:
  <li><p>If <a>this</a>'s <a for=Headers>guard</a> is "<code>request-no-cors</code>", then
  <a for=Headers>remove privileged no-CORS request-headers</a> from <a>this</a>.
 </ol>
+</div>
 
 <p>The <a>value pairs to iterate over</a> are the return value of running
 <a for="header list">sort and combine</a> with <a>this</a>'s <a for=Headers>header list</a>.
@@ -6885,7 +7107,8 @@ steps:
  running <var>object</var>'s <a for=Blob>get stream</a>.
 
  <li><p>Otherwise, set <var>stream</var> to a <a>new</a> {{ReadableStream}} object, and
- <a for=ReadableStream>set up</a> <var>stream</var>.
+ [=ReadableStream/set up with byte reading support|set up=] <var>stream</var> with byte reading
+ support.
 
  <li><p><a for=/>Assert</a>: <var>stream</var> is a {{ReadableStream}} object.
 
@@ -7411,6 +7634,7 @@ object), initially null.
 
 <hr>
 
+<div algorithm>
 <p>To <dfn export for=Request lt=create|creating>create</dfn> a {{Request}} object, given a
 <a for=/>request</a> <var>request</var>, <a for=/>headers guard</a> <var>guard</var>, and
 <a>realm</a> <var>realm</var>, run these steps:
@@ -7429,9 +7653,11 @@ object), initially null.
 
  <li><p>Return <var>requestObject</var>.
 </ol>
+</div>
 
 <hr>
 
+<div algorithm>
 <p>The
 <dfn constructor for=Request id=dom-request lt="Request(input, init)"><code>new Request(<var>input</var>, <var>init</var>)</code></dfn>
 constructor steps are:
@@ -7760,7 +7986,7 @@ constructor steps are:
 
   <ol>
    <li><p>Let <var>bodyWithType</var> be the result of <a for=BodyInit>extracting</a>
-   <var>init</var>["{{RequestInit/body}}"], with <a for=BodyInit/extract><var>keepalive</var></a>
+   <var>init</var>["{{RequestInit/body}}"], with <a for=BodyInit/extract><i>keepalive</i></a>
    set to <var>request</var>'s <a for=request>keepalive</a>.
 
    <li><p>Set <var>initBody</var> to <var>bodyWithType</var>'s <a for="body with type">body</a>.
@@ -7808,6 +8034,7 @@ constructor steps are:
  <li><p>Set <a>this</a>'s <a for=Request>request</a>'s <a for=request>body</a> to
  <var>finalBody</var>.
 </ol>
+</div>
 
 <p>The <dfn attribute for=Request><code>method</code></dfn> getter steps are to return <a>this</a>'s
 <a for=Request>request</a>'s <a for=request>method</a>.
@@ -7821,6 +8048,7 @@ constructor steps are:
 <p>The <dfn attribute for=Request><code>destination</code></dfn> getter are to return <a>this</a>'s
 <a for=Request>request</a>'s <a for=request>destination</a>.
 
+<div algorithm>
 <p>The <dfn attribute for=Request><code>referrer</code></dfn> getter steps are:
 
 <ol>
@@ -7833,6 +8061,7 @@ constructor steps are:
  <li><p>Return <a>this</a>'s <a for=Request>request</a>'s <a for=request>referrer</a>,
  <a lt="URL serializer">serialized</a>.
 </ol>
+</div>
 
 <p>The <dfn attribute for=Request><code>referrerPolicy</code></dfn> getter steps are to return
 <a>this</a>'s <a for=Request>request</a>'s <a for=request>referrer policy</a>.
@@ -7871,6 +8100,7 @@ set; otherwise false.
 
 <hr>
 
+<div algorithm>
 <p>The <dfn method for=Request><code>clone()</code></dfn> method steps are:
 
 <ol>
@@ -7888,6 +8118,7 @@ set; otherwise false.
 
  <li><p>Return <var>clonedRequestObject</var>.
 </ol>
+</div>
 
 
 <h3 id=response-class>Response class</h3>
@@ -7981,6 +8212,7 @@ enum ResponseType { "basic", "cors", "default", "error", "opaque", "opaqueredire
 
 <hr>
 
+<div algorithm>
 <p>To <dfn export for=Response lt=create|creating>create</dfn> a {{Response}} object, given a
 <a for=/>response</a> <var>response</var>, <a for=/>headers guard</a> <var>guard</var>, and
 <a>realm</a> <var>realm</var>, run these steps:
@@ -7998,7 +8230,9 @@ enum ResponseType { "basic", "cors", "default", "error", "opaque", "opaqueredire
 
  <li><p>Return <var>responseObject</var>.
 </ol>
+</div>
 
+<div algorithm>
 <p>To <dfn>initialize a response</dfn>, given a {{Response}} object <var>response</var>,
 {{ResponseInit}} <var>init</var>, and an optional <a for=/>body with type</a> <var>body</var>, run
 these steps:
@@ -8041,9 +8275,11 @@ these steps:
    <a for=response>header list</a>.
   </ol>
 </ol>
+</div>
 
 <hr>
 
+<div algorithm>
 <p>The
 <dfn constructor for=Response id=dom-response lt="Response(body, init)"><code>new Response(<var>body</var>, <var>init</var>)</code></dfn>
 constructor steps are:
@@ -8064,11 +8300,13 @@ constructor steps are:
  <li><p>Perform <a>initialize a response</a> given <a>this</a>, <var>init</var>, and
  <var>bodyWithType</var>.
 </ol>
+</div>
 
 <p>The static <dfn method for=Response><code>error()</code></dfn> method steps are to return the
 result of <a for=Response>creating</a> a {{Response}} object, given a new <a>network error</a>,
 "<code>immutable</code>", and <a>this</a>'s <a>relevant Realm</a>.
 
+<div algorithm>
 <p>The static
 <dfn method for=Response><code>redirect(<var>url</var>, <var>status</var>)</code></dfn> method steps
 are:
@@ -8096,8 +8334,10 @@ are:
 
  <li><p>Return <var>responseObject</var>.
 </ol>
+</div>
 
 
+<div algorithm>
 <p>The static
 <dfn method for=Response><code>json(<var>data</var>, <var>init</var>)</code></dfn> method steps
 are:
@@ -8117,6 +8357,7 @@ are:
 
  <li><p>Return <var>responseObject</var>.
 </ol>
+</div>
 
 <p>The <dfn attribute for=Response><code>type</code></dfn> getter steps are to return <a>this</a>'s
 <a for=Response>response</a>'s <a for=response>type</a>.
@@ -8150,6 +8391,7 @@ otherwise false.
 
 <hr>
 
+<div algorithm>
 <p>The <dfn method for=Response><code>clone()</code></dfn> method steps are:
 
 <ol>
@@ -8162,6 +8404,7 @@ otherwise false.
  <var>clonedResponse</var>, <a>this</a>'s <a for=Response>headers</a>'s <a for=Headers>guard</a>,
  and <a>this</a>'s <a>relevant Realm</a>.
 </ol>
+</div>
 
 
 <h3 id=fetch-method>Fetch method</h3>
@@ -8172,6 +8415,7 @@ partial interface mixin WindowOrWorkerGlobalScope {
 };
 </pre>
 
+<div algorithm>
 <p>The
 <dfn id=dom-global-fetch method for=WindowOrWorkerGlobalScope><code>fetch(<var>input</var>, <var>init</var>)</code></dfn>
 method steps are:
@@ -8272,7 +8516,9 @@ method steps are:
 
  <li><p>Return <var>p</var>.
 </ol>
+</div>
 
+<div algorithm>
 <p>To <dfn lt="Abort the fetch() call" export id=abort-fetch>abort a <code>fetch()</code> call</dfn>
 with a <var>promise</var>, <var>request</var>, <var>responseObject</var>, and an <var>error</var>:
 
@@ -8298,6 +8544,7 @@ with a <var>promise</var>, <var>request</var>, <var>responseObject</var>, and an
  <a for=ReadableStream>readable</a>, then <a for=ReadableStream>error</a> <var>response</var>'s
  <a for=response>body</a> with <var>error</var>.
 </ol>
+</div>
 
 
 <h3 id=garbage-collection>Garbage collection</h3>
@@ -8365,6 +8612,7 @@ that RFC's normative processing requirements to be compatible with deployed cont
 <dfn for="data: URL struct">MIME type</dfn> (a <a for=/>MIME type</a>) and a
 <dfn for="data: URL struct">body</dfn> (a <a>byte sequence</a>).
 
+<div algorithm>
 <p>The <dfn export><code>data:</code> URL processor</dfn> takes a <a for=/>URL</a>
 <var>dataURL</var> and then runs these steps:
 
@@ -8426,6 +8674,7 @@ that RFC's normative processing requirements to be compatible with deployed cont
  <a for="data: URL struct">MIME type</a> is <var>mimeTypeRecord</var> and
  <a for="data: URL struct">body</a> is <var>body</var>.
 </ol>
+</div>
 
 
 
@@ -8544,6 +8793,78 @@ correctly. This section aims to give some advice.
 <p class=warning>Always ask domain experts for review.
 
 <p class=XXX>This is a work in progress.
+
+
+<h3 id=fetch-elsewhere-request>Setting up a request</h3>
+
+<p>The first step in <a for=/>fetching</a> is to create a <a for=/>request</a>, and populate its
+<a for=struct>items</a>.
+
+<p>Start by setting the <a for=/>request</a>'s <a for=request>URL</a> and <a for=request>method</a>,
+as defined by HTTP. If your `<code>POST</code>` or `<code>PUT</code>` <a for=/>request</a> needs a
+body, you set <a for=/>request</a>'s <a for=request>body</a> to a <a for=/>byte sequence</a>, or to
+a new <a for=/>body</a> whose <a for=body>stream</a> is a {{ReadableStream}} you created. [[HTTP]]
+
+<p>Choose your <a for=/>request</a>'s <a for=request>destination</a> using the guidance in the
+<a href="#destination-table">destination table</a>. <a for=request>Destinations</a> affect
+<cite>Content Security Policy</cite> and have other implications such as the [:Sec-Fetch-Dest:]
+header, so they are much more than informative metadata. If a new feature requires a
+<a for=request>destination</a> that's not in the <a href="#destination-table">destination table</a>,
+please
+<a href="https://github.com/whatwg/fetch/issues/new?title=What%20destination%20should%20my%20feature%20use">file an issue</a>
+to discuss. [[CSP]]
+
+<p>Set your <a for=/>request</a>'s <a for=request>client</a> to the
+<a>environment settings object</a> you're operating in. Web-exposed APIs are generally defined with
+Web IDL, for which every object that implements an <a>interface</a> has a
+<a>relevant settings object</a> you can use. For example, a <a for=/>request</a> associated with an
+<a for=/>element</a> would set the <a for=/>request</a>'s <a for=request>client</a> to the element's
+<a>node document</a>'s <a>relevant settings object</a>. All features that are directly web-exposed
+by JavaScript, HTML, CSS, or other {{Document}} subresources should have a
+<a for=request>client</a>.
+
+<p>If your <a for=/>fetching</a> is not directly web-exposed, e.g., it is sent in the background
+without relying on a current {{Window}} or {{Worker}}, leave <a for=/>request</a>'s
+<a for=request>client</a> as null and set the <a for=/>request</a>'s <a for=request>origin</a>,
+<a for=request>policy container</a>, <a for=request>service-workers mode</a>, and
+<a for=request>referrer</a> to appropriate values instead, e.g., by copying them from the
+<a>environment settings object</a> ahead of time. In these more advanced cases, make sure the
+details of how your fetch handles <cite>Content Security Policy</cite> and
+<a for=/>referrer policy</a> are fleshed out. Also make sure you handle concurrency, as callbacks
+(see [[#fetch-elsewhere-fetch]]) would be posted on a <a>parallel queue</a>. [[REFERRER]] [[CSP]]
+
+<p>Think through the way you intend to handle cross-origin resources. Some features may only work in
+the <a>same origin</a>, in which case set your <a for=/>request</a>'s <a for=request>mode</a> to
+"<code>same-origin</code>". Otherwise, new web-exposed features should almost always set their
+<a for=request>mode</a> to "<code>cors</code>". If your feature is not web-exposed, or you think
+there is another reason for it to fetch cross-origin resources without CORS, please
+<a href="https://github.com/whatwg/fetch/issues/new?title=Does%20my%20request%20require%20CORS">file an issue</a>
+to discuss.
+
+<p>For cross-origin requests, also determines if <a for=/>credentials</a> are to be included with
+the requests, in which case set your <a for=/>request</a>'s <a for=request>credentials mode</a> to
+"<code>include</code>".
+
+<p>Figure out if your fetch needs to be reported to <cite>Resource Timing</cite>, and with which
+<a for=request>initiator type</a>. By passing an <a for=request>initiator type</a> to the
+<a for=/>request</a>, reporting to <cite>Resource Timing</cite> will be done automatically once the
+fetch is done and the <a for=/>response</a> is fully downloaded. [[RESOURCE-TIMING]]
+
+<p>If your request requires additional HTTP headers, set its <a for=request>header list</a> to
+a <a for=/>header list</a> that contains those headers, e.g., « (`<code>My-Header-Name</code>`,
+`<code>My-Header-Value</code>`) ». Sending custom headers may have implications, such as requiring a
+<a>CORS-preflight fetch</a>, so handle with care.
+
+<p>If you want to override the default caching mechanism, e.g., disable caching for this
+<a for=/>request</a>, set the request's <a for=request>cache mode</a> to a value other than
+"<code>default</code>".
+
+<p>Determine whether you want your request to support redirects. If you don't, set its
+<a for=request>redirect mode</a> to "<code>error</code>".
+
+<p>Browse through the rest of the parameters for <a for=/>request</a> to see if something else is
+relevant to you. The rest of the parameters are used less frequently, often for special purposes,
+and they are documented in detail in the [[#requests]] section of this standard.
 
 
 <h3 id=fetch-elsewhere-fetch class=no-num>Invoking fetch</h3>
