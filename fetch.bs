@@ -216,7 +216,7 @@ specification defines different categories among which implementers might fall.
 
 <dl>
  <dt><dfn>supports CORS</dfn></dt>
- <dd>if it has a concept of an <a for=/>origin</a> which the current EcmaScript execution context
+ <dd>if it has a concept of an <a for=/>origin</a> which the current ECMAScript execution context
  runs in, and which defines a security boundary with code and data from other origins. [[!HTML]]
  [[ORIGIN]]
 
