@@ -225,7 +225,7 @@ specification defines different categories among which implementers might fall.
  specification, user agents which don't <a>support cookies</a> must act as if they were configured
  to block cookies for all requests and responses (see
  <a href=https://httpwg.org/specs/rfc6265.html#privacy-considerations>section 7</a> of
- [[!COOKIES]])).
+ [[!COOKIES]]).
 </dl>
 
 <p class=note>Web browsers support both CORS and cookies.
