@@ -200,7 +200,14 @@ server-side runtimes, and on the long term to upstream those changes into the WH
 <p>The changes from the WHATWG spec so far are:
 
 <ul>
- <li><p>(none)
+ <li><p>Added [[#conformance-classes]] to describe the various types of runtimes implementing this
+ fork.
+
+ <li><p>Made the <a>forbidden request-header</a> and <a>forbidden response-header name</a>
+ definitions dependent on whether the user agent <a>supports CORS</a> and
+ <a lt="support cookies">cookies</a>. This affects the headers of <a>basic filtered responses</a>,
+ as well as <a for=Headers lt=validate>validation</a> in {{Headers}} objects. The behavior for web
+ browsers doesn't change.
 </ul>
 
 <p class=XXX>Please update this list as new changes are added.
@@ -209,9 +216,6 @@ server-side runtimes, and on the long term to upstream those changes into the WH
 
 <ul>
  <li><p>Remove CORS restrictions for runtimes with no concept of origins.
-
- <li><p>Specify how headers are filtered in {{Request}} and {{Response}} instances in various
- runtimes.
 
  <li><p>Specify how relative URLs resolve in {{fetch}} and the {{Request}} constructor for runtimes
  without a concept of <a>API base URL</a>.
@@ -266,6 +270,32 @@ CORS protocol.
 
 <p>The Fetch Standard also defines the <a method><code>fetch()</code></a> JavaScript API, which
 exposes most of the networking functionality at a fairly low level of abstraction.
+
+
+
+<h2 id=conformance-classes>Conformance classes</h2>
+
+<p>This specification applies to any <a spec="infra">user agent</a> that chooses to implement it.
+However, different types of user agent have different needs in regards to fetching, and so this
+specification defines different categories among which implementers might fall.
+
+<p>A user agent implementing this specification:
+
+<dl>
+ <dt><dfn>supports CORS</dfn></dt>
+ <dd>if it has a concept of an <a for=/>origin</a> which the current ECMAScript execution context
+ runs in, and which defines a security boundary with code and data from other origins. [[!HTML]]
+ [[ORIGIN]]
+
+ <dt><dfn>supports cookies</dfn></dt>
+ <dd>if it supports the user agent requirements of [[!COOKIES]]. For the purposes of this
+ specification, user agents which don't <a>support cookies</a> must act as if they were configured
+ to block cookies for all requests and responses (see
+ <a href=https://httpwg.org/specs/rfc6265.html#privacy-considerations>section 7</a> of
+ [[!COOKIES]]).
+</dl>
+
+<p class=note>Web browsers support both CORS and cookies.
 
 
 
@@ -1268,25 +1298,43 @@ is a <a>byte-case-insensitive</a> match for one of
   <ul class=brief>
    <li>`<code>Accept-Charset</code>`
    <li>`<code>Accept-Encoding</code>`
-   <li>`<a http-header><code>Access-Control-Request-Headers</code></a>`
-   <li>`<a http-header><code>Access-Control-Request-Method</code></a>`
    <li>`<code>Connection</code>`
    <li>`<code>Content-Length</code>`
-   <li>`<code>Cookie</code>`
-   <li>`<code>Cookie2</code>`
    <li>`<code>Date</code>`
    <li>`<code>DNT</code>`
    <li>`<code>Expect</code>`
    <li>`<code>Host</code>`
    <li>`<code>Keep-Alive</code>`
-   <li>`<a http-header><code>Origin</code></a>`
    <li>`<code>Referer</code>`
-   <li>`<code>Set-Cookie</code>`
    <li>`<code>TE</code>`
    <li>`<code>Trailer</code>`
    <li>`<code>Transfer-Encoding</code>`
    <li>`<code>Upgrade</code>`
    <li>`<code>Via</code>`
+  </ul>
+
+  <p>then return true.
+
+ <li>
+  <p>If the user agent <a>supports CORS</a> and <var>name</var> is a <a>byte-case-insensitive</a>
+  match for one of:
+
+  <ul class=brief>
+   <li>`<a http-header><code>Access-Control-Request-Headers</code></a>`
+   <li>`<a http-header><code>Access-Control-Request-Method</code></a>`
+   <li>`<a http-header><code>Origin</code></a>`
+  </ul>
+
+  <p>then return true.
+
+ <li>
+  <p>If the user agent <a>supports cookies</a> and <var>name</var> is a <a>byte-case-insensitive</a>
+  match for one of:
+
+  <ul class=brief>
+   <li>`<code>Cookie</code>`
+   <li>`<code>Cookie2</code>`
+   <li>`<code>Set-Cookie</code>`
   </ul>
 
   <p>then return true.
@@ -1330,13 +1378,16 @@ is a <a>byte-case-insensitive</a> match for one of
 </div>
 </div>
 
-<p>A <dfn export>forbidden response-header name</dfn> is a <a for=/>header name</a> that is a
-<a>byte-case-insensitive</a> match for one of:
+<div algorithm>
+<p>A <a for=/>header name</a> <var>name</var> is a <dfn export>forbidden response-header name</dfn>
+if the user agent <a>supports cookies</a> and <var>name</var> is a <a>byte-case-insensitive</a>
+match for one of:
 
 <ul class=brief>
  <li>`<code>Set-Cookie</code>`
  <li>`<code>Set-Cookie2</code>`
 </ul>
+</div>
 
 <p>A <dfn export>request-body-header name</dfn> is a <a for=/>header name</a> that is a
 <a>byte-case-insensitive</a> match for one of:
