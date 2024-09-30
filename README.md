@@ -1,12 +1,5 @@
-# wintercg/fetch
+# whatwg/fetch
 
-This repository hosts a fork of the
-[WHATWG fetch standard](https://fetch.spec.whatwg.org/), modified to be more
-suitable for use in server side JavaScript environments.
+This repository contains changes to the WHATWG Fetch standard to make it more suitable to server side runtimes.
+These changes will soon be, or are in the process of being upstreamed to the [WHATWG fetch standard](https://fetch.spec.whatwg.org/).
 
-## Tests
-
-Tests for WHATWG Fetch can be found in the `fetch/` directory of
-[web-platform-tests/wpt](https://github.com/web-platform-tests/wpt).
-
-Tests for WinterCG Fetch have not been created yet.
