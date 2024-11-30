@@ -22,5 +22,5 @@ jobs:
         uses: denoland/deployctl@v1
         with:
           project: "wintercg-fetch"
-          entrypoint: "https://deno.land/std@0.134.0/http/file_server.ts"
+          entrypoint: ./server.ts
           root: out/
